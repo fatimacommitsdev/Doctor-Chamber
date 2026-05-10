@@ -53,14 +53,23 @@ async function uploadToCloudinary(buffer, mimetype) {
     const resourceType = mimetype.startsWith('video/') ? 'video'
                        : mimetype.startsWith('image/') ? 'image'
                        : 'raw';
+    
+    // ✅ Add timeout of 30 seconds
+    const timer = setTimeout(() => {
+      reject(new Error('Cloudinary upload timed out after 30s'));
+    }, 30000);
+
     const stream = cloudinary.uploader.upload_stream(
       { resource_type: resourceType, folder: 'whatsapp-bulk' },
-      (error, result) => error ? reject(error) : resolve(result)
+      (error, result) => {
+        clearTimeout(timer);
+        if (error) reject(error);
+        else resolve(result);
+      }
     );
     stream.end(buffer);
   });
 }
-
 function buildPayload({ to, message, mediaUrl, mediaMime }) {
   if (!mediaUrl) return { to_number: to, type: 'text', message };
   return { to_number: to, type: maytapiType(mediaMime), message, media: mediaUrl };
