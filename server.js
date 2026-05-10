@@ -77,32 +77,20 @@ function normalizePhone(raw) {
   return phone;
 }
 
-// ── Utility: Get correct Maytapi type string ──────────────────────────────────
-// Maytapi valid types: 'text' | 'image' | 'video' | 'audio' | 'pdf' | 'doc'
-function getMaytapiType(mimetype) {
-  if (!mimetype)                       return 'text';
-  if (mimetype.startsWith('image/'))   return 'image';
-  if (mimetype.startsWith('video/'))   return 'video';
-  if (mimetype.startsWith('audio/'))   return 'audio';
-  if (mimetype === 'application/pdf')  return 'pdf';
-  return 'doc'; // Word, Excel, PowerPoint, etc.
-}
-
 // ── Utility: Send one WhatsApp message via Maytapi ───────────────────────────
-// Correct Maytapi payload:
-//   Text:  { to_number, type: 'text', message }
-//   Media: { to_number, type: 'image'|'video'|'audio'|'pdf'|'doc', url, message (caption) }
+// Per official Maytapi API docs (swagger-ui-doc.pdf, page 14):
+//   Text:  { to_number, type: 'text',  message: 'your text' }
+//   Media: { to_number, type: 'media', message: 'FILE_URL', text: 'caption' }
 async function sendWhatsApp({ productId, phoneId, apiToken, to, message, mediaUrl, mediaMime }) {
   const endpoint = `https://api.maytapi.com/api/${productId}/${phoneId}/sendMessage`;
 
   let payload;
   if (mediaUrl) {
-    const type = getMaytapiType(mediaMime);
     payload = {
       to_number: to,
-      type,
-      url:     mediaUrl,    // Cloudinary public URL
-      text: message || '', // 'text' is Maytapi's caption field for media
+      type:      'media',      // always 'media' for ALL file types per Maytapi docs
+      message:   mediaUrl,     // ← FILE URL goes in 'message' field
+      text:      message || '', // ← caption goes in 'text' field
     };
   } else {
     payload = {
