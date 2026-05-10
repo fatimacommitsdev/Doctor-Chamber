@@ -1,4 +1,5 @@
 // server.js — WhatsApp Bulk Sender Backend
+const sharp = require('sharp');
 const express    = require('express');
 const multer     = require('multer');
 const XLSX       = require('xlsx');
@@ -126,12 +127,25 @@ app.post('/api/send',
                   || keys.find(k => /phone|mobile|number|whatsapp/i.test(k))
                   || keys[0];
 
-    // ✅ Upload to Cloudinary — permanent public URL
+
+// ✅ Upload to Cloudinary — permanent public URL
     let mediaUrl = null;
     if (mediaFile) {
       try {
+        let fileBuffer = mediaFile.buffer;
+
+        // ✅ Compress image before uploading
+        if (mediaFile.mimetype.startsWith('image/')) {
+          console.log('Compressing image, original size:', fileBuffer.length);
+          fileBuffer = await sharp(fileBuffer)
+            .resize(1280, 1280, { fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 70 })
+            .toBuffer();
+          console.log('Compressed size:', fileBuffer.length);
+        }
+
         console.log('Uploading to Cloudinary...');
-        const result = await uploadToCloudinary(mediaFile.buffer, mediaFile.mimetype);
+        const result = await uploadToCloudinary(fileBuffer, 'image/jpeg');
         mediaUrl = result.secure_url;
         console.log('Cloudinary URL:', mediaUrl);
       } catch (err) {
