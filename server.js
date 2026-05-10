@@ -102,7 +102,7 @@ async function sendWhatsApp({ productId, phoneId, apiToken, to, message, mediaUr
       to_number: to,
       type,
       url:     mediaUrl,    // Cloudinary public URL
-      message: message || '', // caption shown below media
+      text: message || '', // 'text' is Maytapi's caption field for media
     };
   } else {
     payload = {
