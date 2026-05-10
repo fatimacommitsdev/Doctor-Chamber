@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WhatsApp Bulk Sender</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #128c3e;
+    --green-dim: #0e7434;
+    --green-glow: rgba(18,140,62,0.1);
+    --bg: #f0f4f1;
+    --surface: #ffffff;
+    --surface2: #f7f9f8;
+    --border: #d4e2d9;
+    --text: #1a2b1f;
+    --muted: #5a7a64;
+    --danger: #c0392b;
+    --warning: #d68910;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px 80px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(18,140,62,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; z-index: 1; }
+  .brand-icon {
+    width: 36px; height: 36px; background: var(--green);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  }
+  .brand-icon svg { width: 20px; height: 20px; fill: #fff; }
+  .brand h1 { font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text); }
+  .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 36px; z-index: 1; }
+
+  .card {
+    width: 100%; max-width: 640px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 32px; z-index: 1;
+    box-shadow: 0 2px 16px rgba(18,140,62,0.06), 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    letter-spacing: 1.5px; color: var(--green); text-transform: uppercase;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .field { margin-bottom: 20px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 7px; font-weight: 500; }
+
+  input[type="text"], input[type="password"], textarea, select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; padding: 11px 14px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--green); box-shadow: 0 0 0 3px var(--green-glow); background: #fff;
+  }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Drop zones */
+  .drop-zone {
+    border: 1.5px dashed var(--border); border-radius: 10px;
+    padding: 28px 20px; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--surface2); position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--green); background: rgba(18,140,62,0.04); }
+  .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-icon {
+    width: 40px; height: 40px; background: rgba(18,140,62,0.1);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;
+  }
+  .drop-icon svg { width: 20px; height: 20px; stroke: var(--green); fill: none; stroke-width: 1.8; }
+  .drop-primary { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .drop-secondary { font-size: 12px; color: var(--muted); }
+
+  /* Media type tabs */
+  .media-tabs {
+    display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .media-tab {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted); font-size: 13px;
+    cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+  }
+  .media-tab svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .media-tab:hover { border-color: var(--green); color: var(--green); }
+  .media-tab.active { background: rgba(18,140,62,0.1); border-color: var(--green); color: var(--green); }
+  .media-tab.none-tab.active { background: rgba(90,122,100,0.08); border-color: var(--muted); color: var(--muted); }
+
+  /* File badge */
+  .file-badge {
+    display: none; align-items: center; gap: 8px;
+    background: rgba(18,140,62,0.07); border: 1px solid rgba(18,140,62,0.2);
+    border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 13px; color: var(--green);
+  }
+  .file-badge svg { width: 16px; height: 16px; stroke: var(--green); fill: none; stroke-width: 2; flex-shrink: 0; }
+  .file-badge .remove-media {
+    margin-left: auto; cursor: pointer; color: var(--danger);
+    background: none; border: none; font-size: 16px; line-height: 1; padding: 0 2px;
+  }
+  .file-badge.show { display: flex; }
+
+  /* Media preview */
+  .media-preview { margin-top: 10px; display: none; }
+  .media-preview img { max-width: 100%; max-height: 160px; border-radius: 8px; border: 1px solid var(--border); }
+  .media-preview.show { display: block; }
+
+  .col-hint {
+    margin-top: 12px; font-size: 12px; color: var(--muted);
+    background: #f0f7f3; border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 12px; line-height: 1.6;
+  }
+  .col-hint code {
+    background: rgba(18,140,62,0.1); color: var(--green);
+    padding: 1px 5px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 11px;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag {
+    background: rgba(18,140,62,0.08); color: var(--green);
+    border: 1px solid rgba(18,140,62,0.2); border-radius: 20px;
+    font-size: 12px; padding: 3px 10px;
+    font-family: 'Space Mono', monospace; cursor: pointer; transition: background 0.15s;
+  }
+  .tag:hover { background: rgba(18,140,62,0.16); }
+
+  .char-count { font-size: 12px; color: var(--muted); text-align: right; margin-top: 5px; }
+
+  .btn {
+    width: 100%; padding: 14px; background: var(--green); color: #fff;
+    border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.18s;
+    display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 8px;
+  }
+  .btn:hover { background: var(--green-dim); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(18,140,62,0.3); }
+  .btn:active { transform: translateY(0); box-shadow: none; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.35); border-top-color: #fff;
+    border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .progress-wrap { display: none; margin-top: 20px; }
+  .progress-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .progress-bar-bg { height: 6px; background: #ddeee3; border-radius: 99px; overflow: hidden; }
+  .progress-bar { height: 100%; background: var(--green); border-radius: 99px; width: 0%; transition: width 0.3s; }
+
+  .log-box {
+    display: none; margin-top: 16px;
+    background: #f7faf8; border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; max-height: 180px; overflow-y: auto;
+    font-family: 'Space Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--muted);
+  }
+  .log-box .log-ok   { color: #0e7434; }
+  .log-box .log-err  { color: var(--danger); }
+  .log-box .log-info { color: var(--warning); }
+
+  .alert {
+    padding: 11px 14px; border-radius: 8px; font-size: 13px;
+    margin-top: 16px; display: none; align-items: flex-start; gap: 9px;
+  }
+  .alert svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert.success { background: #eaf6ee; border: 1px solid #b2dcc0; color: #0e6630; }
+  .alert.error   { background: #fdf0ef; border: 1px solid #f0b8b3; color: var(--danger); }
+  .alert.show    { display: flex; }
+
+  @media (max-width: 520px) {
+    .grid2 { grid-template-columns: 1fr; }
+    .card  { padding: 22px 18px; }
+    .media-tabs { gap: 6px; }
+    .media-tab { padding: 6px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <div class="brand-icon">
+    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </div>
+  <h1>WA Bulk Sender</h1>
+</div>
+<p class="subtitle">Upload Excel → Attach Media → Send via Maytapi</p>
+
+<div class="card">
+
+  <!-- API Config -->
+  <div class="section-label">API Configuration</div>
+  <div class="grid2">
+    <div class="field">
+      <label>Product ID</label>
+      <input type="text" id="productId" placeholder="e.g. abc123def" />
+    </div>
+    <div class="field">
+      <label>Phone ID</label>
+      <input type="text" id="phoneId" placeholder="e.g. 142212" />
+    </div>
+  </div>
+  <div class="field">
+    <label>API Token</label>
+    <input type="password" id="apiToken" placeholder="Your Maytapi API token" />
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Excel Upload -->
+  <div class="section-label">Excel / CSV File</div>
+  <div class="drop-zone" id="excelZone">
+    <input type="file" id="excelInput" accept=".xlsx,.xls,.csv" />
+    <div class="drop-icon">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </div>
+    <p class="drop-primary">Drop your Excel file here</p>
+    <p class="drop-secondary">or click to browse — .xlsx, .xls, .csv</p>
+  </div>
+  <div class="file-badge" id="excelBadge">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <span id="excelName">file.xlsx</span>
+  </div>
+  <div class="col-hint">
+    Required column: <code>phone</code> (with country code). Other columns become <code>{{merge_tags}}</code>.
+    Example: <code>+919876543210</code>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Media Attachment -->
+  <div class="section-label">Attachment <span style="font-size:10px;color:var(--muted);font-family:'DM Sans';letter-spacing:0;text-transform:none;margin-left:4px;">(optional)</span></div>
+
+  <!-- Type Tabs -->
+  <div class="media-tabs">
+    <button class="media-tab none-tab active" data-type="none" onclick="selectMediaType('none', this)">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      No Media
+    </button>
+    <button class="media-tab" data-type="pdf" onclick="selectMediaType('pdf', this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      PDF
+    </button>
+    <button class="media-tab" data-type="image" onclick="selectMediaType('image', this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Image
+    </button>
+    <button class="media-tab" data-type="video" onclick="selectMediaType('video', this)">
+      <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      Video
+    </button>
+    <button class="media-tab" data-type="audio" onclick="selectMediaType('audio', this)">
+      <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      Audio
+    </button>
+    <button class="media-tab" data-type="doc" onclick="selectMediaType('doc', this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Document
+    </button>
+  </div>
+
+  <!-- Media drop zone (hidden when none) -->
+  <div id="mediaUploadArea" style="display:none;">
+    <div class="drop-zone" id="mediaZone">
+      <input type="file" id="mediaInput" />
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24" id="mediaDropIcon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <p class="drop-primary" id="mediaDropLabel">Drop file here</p>
+      <p class="drop-secondary" id="mediaDropSub">or click to browse</p>
+    </div>
+    <div class="file-badge" id="mediaBadge">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span id="mediaName">file</span>
+      <button class="remove-media" onclick="removeMedia()" title="Remove">×</button>
+    </div>
+    <div class="media-preview" id="mediaPreview">
+      <img id="previewImg" src="" alt="preview" />
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Message -->
+  <div class="section-label">Message / Caption</div>
+  <div class="field">
+    <label>Message Template</label>
+    <textarea id="messageText" placeholder="Hi {{name}}, your order {{order_id}} has been shipped!"></textarea>
+    <div class="char-count"><span id="charCount">0</span> characters</div>
+  </div>
+  <div>
+    <label>Insert merge tags</label>
+    <div class="tag-row" id="tagRow">
+      <span class="tag" onclick="insertTag('{{name}}')">{{name}}</span>
+      <span class="tag" onclick="insertTag('{{phone}}')">{{phone}}</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Delay -->
+  <div class="field">
+    <label>Delay between messages (ms)</label>
+    <input type="text" id="delay" value="1500" placeholder="1500" />
+  </div>
+
+  <!-- Send -->
+  <button class="btn" id="sendBtn" onclick="handleSend()">
+    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <div class="spinner" id="spinner"></div>
+    <span id="btnLabel">Send Messages</span>
+  </button>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-info">
+      <span id="progressLabel">Sending…</span>
+      <span id="progressCount">0 / 0</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+
+  <div class="log-box" id="logBox"></div>
+
+  <div class="alert success" id="alertSuccess">
+    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="alertSuccessMsg">All messages sent!</span>
+  </div>
+  <div class="alert error" id="alertError">
+    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16"/></svg>
+    <span id="alertErrorMsg">An error occurred.</span>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let selectedExcel = null;
+let selectedMedia = null;
+let currentMediaType = 'none';
+
+// ── Excel drop zone ────────────────────────────────────────────
+const excelZone  = document.getElementById('excelZone');
+const excelInput = document.getElementById('excelInput');
+
+excelZone.addEventListener('dragover',  e => { e.preventDefault(); excelZone.classList.add('drag-over'); });
+excelZone.addEventListener('dragleave', ()=> excelZone.classList.remove('drag-over'));
+excelZone.addEventListener('drop', e => {
+  e.preventDefault(); excelZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleExcel(e.dataTransfer.files[0]);
+});
+excelInput.addEventListener('change', () => { if (excelInput.files[0]) handleExcel(excelInput.files[0]); });
+
+function handleExcel(f) {
+  selectedExcel = f;
+  document.getElementById('excelName').textContent = f.name;
+  document.getElementById('excelBadge').classList.add('show');
+  fetchColumns(f);
+}
+
+async function fetchColumns(f) {
+  try {
+    const fd = new FormData(); fd.append('file', f);
+    const res = await fetch('/api/columns', { method: 'POST', body: fd });
+    if (res.ok) {
+      const data = await res.json();
+      renderTags(data.columns || []);
+    }
+  } catch(e) {}
+}
+
+function renderTags(cols) {
+  const row = document.getElementById('tagRow');
+  row.innerHTML = '';
+  const all = cols.length ? cols : ['name','phone'];
+  all.forEach(c => {
+    const t = document.createElement('span');
+    t.className = 'tag';
+    t.textContent = `{{${c}}}`;
+    t.onclick = () => insertTag(`{{${c}}}`);
+    row.appendChild(t);
+  });
+}
+
+// ── Media type tabs ────────────────────────────────────────────
+const MEDIA_CONFIG = {
+  none:  { label: 'No attachment', sub: '', accept: '' },
+  pdf:   { label: 'Drop PDF here', sub: 'or click to browse — .pdf', accept: '.pdf,application/pdf' },
+  image: { label: 'Drop image here', sub: 'or click to browse — .jpg .png .gif .webp', accept: 'image/*' },
+  video: { label: 'Drop video here', sub: 'or click to browse — .mp4 .mov .avi', accept: 'video/*' },
+  audio: { label: 'Drop audio here', sub: 'or click to browse — .mp3 .ogg .wav', accept: 'audio/*' },
+  doc:   { label: 'Drop document here', sub: 'or click to browse — .docx .xlsx .pptx', accept: '.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+};
+
+function selectMediaType(type, btn) {
+  currentMediaType = type;
+  document.querySelectorAll('.media-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const area = document.getElementById('mediaUploadArea');
+  if (type === 'none') { area.style.display = 'none'; removeMedia(); return; }
+  area.style.display = 'block';
+  const cfg = MEDIA_CONFIG[type];
+  document.getElementById('mediaDropLabel').textContent = cfg.label;
+  document.getElementById('mediaDropSub').textContent   = cfg.sub;
+  document.getElementById('mediaInput').accept          = cfg.accept;
+  removeMedia();
+}
+
+// ── Media drop zone ────────────────────────────────────────────
+const mediaZone  = document.getElementById('mediaZone');
+const mediaInput = document.getElementById('mediaInput');
+
+mediaZone.addEventListener('dragover',  e => { e.preventDefault(); mediaZone.classList.add('drag-over'); });
+mediaZone.addEventListener('dragleave', ()=> mediaZone.classList.remove('drag-over'));
+mediaZone.addEventListener('drop', e => {
+  e.preventDefault(); mediaZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleMedia(e.dataTransfer.files[0]);
+});
+mediaInput.addEventListener('change', () => { if (mediaInput.files[0]) handleMedia(mediaInput.files[0]); });
+
+function handleMedia(f) {
+  selectedMedia = f;
+  document.getElementById('mediaName').textContent = `${f.name} (${(f.size/1024).toFixed(1)} KB)`;
+  document.getElementById('mediaBadge').classList.add('show');
+
+  // Image preview
+  const preview = document.getElementById('mediaPreview');
+  const img     = document.getElementById('previewImg');
+  if (f.type.startsWith('image/')) {
+    const url = URL.createObjectURL(f);
+    img.src = url;
+    preview.classList.add('show');
+  } else {
+    preview.classList.remove('show');
+    img.src = '';
+  }
+}
+
+function removeMedia() {
+  selectedMedia = null;
+  document.getElementById('mediaBadge').classList.remove('show');
+  document.getElementById('mediaPreview').classList.remove('show');
+  document.getElementById('previewImg').src = '';
+  document.getElementById('mediaInput').value = '';
+  document.getElementById('mediaName').textContent = '';
+}
+
+// ── Message ────────────────────────────────────────────────────
+const msgText = document.getElementById('messageText');
+msgText.addEventListener('input', () => { document.getElementById('charCount').textContent = msgText.value.length; });
+
+function insertTag(tag) {
+  const s = msgText.selectionStart, e = msgText.selectionEnd;
+  msgText.value = msgText.value.slice(0,s) + tag + msgText.value.slice(e);
+  msgText.selectionStart = msgText.selectionEnd = s + tag.length;
+  msgText.focus();
+  document.getElementById('charCount').textContent = msgText.value.length;
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function log(msg, type='info') {
+  const box = document.getElementById('logBox');
+  box.style.display = 'block';
+  const line = document.createElement('div');
+  line.className = `log-${type}`;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function showAlert(type, msg) {
+  document.getElementById('alertSuccess').classList.remove('show');
+  document.getElementById('alertError').classList.remove('show');
+  if (type === 'success') {
+    document.getElementById('alertSuccessMsg').textContent = msg;
+    document.getElementById('alertSuccess').classList.add('show');
+  } else {
+    document.getElementById('alertErrorMsg').textContent = msg;
+    document.getElementById('alertError').classList.add('show');
+  }
+}
+
+// ── Send ───────────────────────────────────────────────────────
+async function handleSend() {
+  const productId = document.getElementById('productId').value.trim();
+  const phoneId   = document.getElementById('phoneId').value.trim();
+  const apiToken  = document.getElementById('apiToken').value.trim();
+  const message   = msgText.value.trim();
+  const delay     = parseInt(document.getElementById('delay').value) || 1500;
+
+  if (!productId || !phoneId || !apiToken) return showAlert('error','Please fill in all API configuration fields.');
+  if (!selectedExcel)                       return showAlert('error','Please upload an Excel file.');
+  if (!message)                             return showAlert('error','Please enter a message or caption.');
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('btnLabel').textContent = 'Sending…';
+  document.getElementById('logBox').innerHTML = '';
+  document.getElementById('logBox').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('alertSuccess').classList.remove('show');
+  document.getElementById('alertError').classList.remove('show');
+
+  const fd = new FormData();
+  fd.append('excel',     selectedExcel);
+  fd.append('productId', productId);
+  fd.append('phoneId',   phoneId);
+  fd.append('apiToken',  apiToken);
+  fd.append('message',   message);
+  fd.append('delay',     delay);
+  if (selectedMedia) fd.append('media', selectedMedia);
+
+  try {
+    const res     = await fetch('/api/send', { method: 'POST', body: fd });
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n'); buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        try {
+          const evt = JSON.parse(line.slice(5));
+          if (evt.type === 'progress') {
+            const pct = Math.round((evt.sent / evt.total) * 100);
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressCount').textContent = `${evt.sent} / ${evt.total}`;
+            document.getElementById('progressLabel').textContent = `Sending to ${evt.phone}…`;
+            log(`✓ Sent to ${evt.phone}`, 'ok');
+          } else if (evt.type === 'error') {
+            log(`✗ Failed: ${evt.phone} — ${evt.reason}`, 'err');
+          } else if (evt.type === 'done') {
+            showAlert('success', `Done! ${evt.sent} sent, ${evt.failed} failed out of ${evt.total}.`);
+            document.getElementById('progressLabel').textContent = 'Complete';
+          }
+        } catch(e) {}
+      }
+    }
+  } catch(e) {
+    showAlert('error', 'Network error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('btnLabel').textContent = 'Send Messages';
+  }
+}
+</script>
+</body>
+</html>
